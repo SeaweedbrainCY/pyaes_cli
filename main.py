@@ -3,32 +3,55 @@ import os
 from rich import print
 from typing_extensions import Annotated
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Prompt
 import time
 import src.compression as compression
+import src.derivation as derivation
+import src.encryption as encryption
+import pathlib
+
 
 app = typer.Typer()
 
 
 @app.command()
-def enc(file_path: str, password: Annotated[
+def enc(file_path: str, dest_path:str,password: Annotated[
         str, typer.Option(prompt=True, confirmation_prompt=True, hide_input=True)
     ],):
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        transient=True,
-    ) as progress:
         if not os.path.exists(file_path):
             print(f"[bold red]File {file_path} not found[/bold red]")
             raise typer.Abort()
-        progress.add_task(description="Compressing...", total=None)
-        compression.compress(file_path)
+        if file_path == dest_path:
+            print(f"[bold red]Source and destination cannot be the same[/bold red]")
+            raise typer.Abort()
+        dest = pathlib.Path(dest_path)
+        if dest.exists():
+            delete = typer.confirm(f"\n{dest_path} already exists. Do you want to overwrite it?")
+            if not delete:
+                raise typer.Abort()
+        with Progress(SpinnerColumn(),TextColumn("[progress.description]{task.description}"),transient=True,) as progress:
+            progress.add_task(description="Compressing...", total=None)
+            compressed_file_path = compression.compress(file_path)
+            print("\n📦 [green]Compressed[/green]")
+            progress.add_task(description="Deriving your key...", total=None)
+            derived_key = derivation.derive_key(password)
+            print("🔑 [green]Key derived[/green]")
+            progress.add_task(description="Encrypting...", total=None)
+            encryption.encrypt(compressed_file_path, dest_path, derived_key)
+            os.remove(compressed_file_path)
+            print(f"🔒 [green]{file_path} encrypted to {dest_path}[/green]")
+
+        
+
+        
 
         
 
 @app.command()
-def dec(file_path: str):
-    print(f"Decrypting {file_path}")
+def dec(file_path: str, password: Annotated[
+        str, typer.Option(prompt=True, confirmation_prompt=True, hide_input=True)
+    ],):
+        pass
 
 
 if __name__ == "__main__":
