@@ -15,3 +15,8 @@ def compress(file_path:str):
             zipf.write(file_path)
     
     return zip_file_path
+
+def decompress(file_path:str, dest:str):
+    with zipfile.ZipFile(file_path, 'r') as zipf:
+        zipf.extractall(dest)
+    return dest
