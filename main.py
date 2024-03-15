@@ -65,13 +65,13 @@ def dec(file_path: str,dest_path:str, password: Annotated[
         with Progress(SpinnerColumn(),TextColumn("[progress.description]{task.description}"),transient=True,) as progress:
             progress.add_task(description="Deriving your key...", total=None)
             derived_key,_ = derivation.derive_key(password, encryption.get_key_salt(file_path))
-            print("🔑 [green]Key derived[/green]")
+            print("\n🔑 [green]Key derived[/green]")
             progress.add_task(description="Decrypting...", total=None)
             decrypted_path = encryption.decrypt(file_path, derived_key)
             if not decrypted_path:
                 print(f"[bold red]Invalid password[/bold red]")
                 raise typer.Abort()
-            print("\n🔓 [green]Decrypted[/green]")
+            print("🔓 [green]Decrypted[/green]")
             progress.add_task(description="Extracting...", total=None)
             compression.decompress(decrypted_path, dest_path)
             os.remove(decrypted_path)
